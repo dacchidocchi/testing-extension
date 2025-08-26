@@ -1,10 +1,15 @@
-use exports::nero::extension::extractor::{
-    Episode, EpisodesPage, FilterCategory, Guest, SearchFilter, Series, SeriesPage, Url, Video,
-};
 use wasi::http::types::{ErrorCode, Fields, Scheme};
 
+use crate::{
+    exports::nero::extension::extractor::{
+        EpisodesPage, FilterCategory, Guest, SearchFilter, SeriesPage,
+    },
+    nero::extension::types::{Episode, Series, Video},
+    wasi::http::types::OutgoingRequest,
+};
+
 wit_bindgen::generate!({
-    path: "./wit/v0.0.1",
+    path: "./wit",
     generate_all,
 });
 
@@ -23,14 +28,17 @@ struct TestingExtension;
 
 impl TestingExtension {
     fn sample_series() -> Series {
+        let outgoing = OutgoingRequest::new(Fields::new());
+        outgoing.set_scheme(Some(&Scheme::Https)).unwrap();
+        outgoing.set_authority(Some("m.media-amazon.com")).unwrap();
+        outgoing.set_path_with_query(Some(
+            "/images/M/MV5BMDlmZGJkYTUtNDcwNi00YWMzLTkyNmMtOWQ3MzVhOTU5YWY0XkEyXkFqcGc@._V1_.jpg",
+        )).unwrap();
+
         Series {
             id: "spy-x-family".to_owned(),
             title: "SPY x FAMILY".to_owned(),
-            poster_url: Some(Url {
-                scheme: Scheme::Https,
-                authority: "m.media-amazon.com".to_owned(),
-                path_with_query: Some("/images/M/MV5BMDlmZGJkYTUtNDcwNi00YWMzLTkyNmMtOWQ3MzVhOTU5YWY0XkEyXkFqcGc@._V1_.jpg".to_owned()),
-            }),
+            poster_resource: Some(outgoing),
             synopsis: Some(r#"
                 World peace is at stake and secret agent Twilight must undergo his most difficult mission 
                 yet—pretend to be a family man. Posing as a loving husband and father, he’ll infiltrate an 
@@ -43,15 +51,18 @@ impl TestingExtension {
     }
 
     fn sample_episode() -> Episode {
+        let outgoing = OutgoingRequest::new(Fields::new());
+        outgoing.set_scheme(Some(&Scheme::Https)).unwrap();
+        outgoing.set_authority(Some("m.media-amazon.com")).unwrap();
+        outgoing.set_path_with_query(Some(
+            "/images/M/MV5BOTAxODZiYzAtOGRhOC00ZjlmLTkxYzEtMGZjNDE0MjcwZTc1XkEyXkFqcGc@._V1_.jpg",
+        )).unwrap();
+
         Episode {
             id: "1".to_owned(),
             number: 1,
             title: Some("OPERATION STRIX".to_owned()),
-            thumbnail_url: Some(Url {
-                scheme: Scheme::Https,
-                authority: "m.media-amazon.com".to_owned(),
-                path_with_query: Some("/images/M/MV5BOTAxODZiYzAtOGRhOC00ZjlmLTkxYzEtMGZjNDE0MjcwZTc1XkEyXkFqcGc@._V1_.jpg".to_owned()),
-            }),
+            thumbnail_resource: Some(outgoing),
             description: Some(r#"
                 Twilight is an agent that works for WISE, Westalis's intelligence agency, and he is tasked with 
                 investigating Desmond, who is in Ostania and planning to start a war. Twilight disguises himself 
@@ -64,13 +75,17 @@ impl TestingExtension {
     }
 
     fn sample_video() -> Video {
+        let outgoing = OutgoingRequest::new(Fields::new());
+        outgoing.set_scheme(Some(&Scheme::Https)).unwrap();
+        outgoing
+            .set_authority(Some("commondatastorage.googleapis.com"))
+            .unwrap();
+        outgoing
+            .set_path_with_query(Some("/gtv-videos-bucket/sample/BigBuckBunny.mp4"))
+            .unwrap();
+
         Video {
-            url: Url {
-                scheme: Scheme::Https,
-                authority: "commondatastorage.googleapis.com".to_owned(),
-                path_with_query: Some("/gtv-videos-bucket/sample/BigBuckBunny.mp4".to_owned()),
-            },
-            headers: Fields::new(),
+            http_resource: outgoing,
             server: "Google".to_owned(),
             resolution: (0, 0),
         }
@@ -80,7 +95,7 @@ impl TestingExtension {
 #[allow(unused_variables)]
 impl Guest for TestingExtension {
     fn filters() -> Result<Vec<FilterCategory>, ErrorCode> {
-        todo!()
+        Err(ErrorCode::InternalError(Some("Not implemented".to_owned())))
     }
 
     fn search(
